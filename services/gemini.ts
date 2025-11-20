@@ -23,7 +23,7 @@ export const getSearchSuggestions = async (userQuery: string): Promise<AISearchR
 
   // 1. Check if API Key exists
   if (!apiKey || !ai) {
-    console.error("Configuration Error: API_KEY is missing. Please create a .env file with API_KEY=your_key");
+    console.error("Configuration Error: API_KEY is missing.");
     return {
       ...fallbackResult,
       reasoning: '未配置 API Key，仅显示基础搜索结果。'
@@ -83,17 +83,26 @@ export const getSearchSuggestions = async (userQuery: string): Promise<AISearchR
     // Log the full error object for debugging
     console.error("AI Search Error Details:", error);
     
-    // Check for common error types
-    let errorReason = 'AI 服务暂时繁忙，已为您显示基础结果。';
-    if (error.message?.includes('API key not valid') || error.status === 400 || error.status === 403) {
-      errorReason = 'API Key 无效或已过期。';
-    } else if (error.status === 429) {
-      errorReason = 'AI 服务请求过于频繁，请稍后再试。';
+    let errorReason = 'AI 服务遇到未知错误，已显示基础结果。';
+    const status = error.status;
+    const msg = error.message || '';
+
+    // 详细的错误诊断逻辑
+    if (msg.includes('API key not valid') || status === 400) {
+      errorReason = 'API Key 无效 (400)。请检查密钥是否正确。';
+    } else if (status === 403) {
+      // 这是最可能的线上错误原因
+      errorReason = '访问被拒绝 (403)。请在 Google Cloud Console 检查 API Key 限制，确保域名已添加。';
+    } else if (status === 429) {
+      errorReason = '请求过多 (429)。API 配额已耗尽。';
+    } else if (msg.includes('fetch failed')) {
+      errorReason = '网络请求失败，请检查网络连接。';
     }
 
     return {
       ...fallbackResult,
-      reasoning: errorReason
+      // 将错误代码附带在后面，方便您在网页上直接看到原因
+      reasoning: `${errorReason} [Err: ${status || 'Unknown'}]`
     };
   }
 };
