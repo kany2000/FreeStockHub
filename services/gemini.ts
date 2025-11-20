@@ -3,14 +3,30 @@ import { AISearchResult, Category } from '../types';
 
 // Ensure API Key is present (handled by system environment)
 const apiKey = process.env.API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+// Initialize conditionally to avoid immediate crash if key is missing during static analysis
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const getSearchSuggestions = async (userQuery: string): Promise<AISearchResult> => {
+  const fallbackResult: AISearchResult = {
+    keywords: [userQuery],
+    recommendedCategories: [Category.ALL],
+    reasoning: 'AI 服务暂时繁忙，已为您显示基础结果。'
+  };
+
   if (!userQuery.trim()) {
     return {
       keywords: [],
       recommendedCategories: [Category.ALL],
       reasoning: ''
+    };
+  }
+
+  // 1. Check if API Key exists
+  if (!apiKey || !ai) {
+    console.error("Configuration Error: API_KEY is missing. Please create a .env file with API_KEY=your_key");
+    return {
+      ...fallbackResult,
+      reasoning: '未配置 API Key，仅显示基础搜索结果。'
     };
   }
 
@@ -57,19 +73,27 @@ export const getSearchSuggestions = async (userQuery: string): Promise<AISearchR
 
     const text = response.text;
     if (!text) {
-      throw new Error('No response from AI');
+      throw new Error('No response text received from AI');
     }
 
     const result = JSON.parse(text) as AISearchResult;
     return result;
 
-  } catch (error) {
-    console.error("AI Search Error:", error);
-    // Fallback in case of error
+  } catch (error: any) {
+    // Log the full error object for debugging
+    console.error("AI Search Error Details:", error);
+    
+    // Check for common error types
+    let errorReason = 'AI 服务暂时繁忙，已为您显示基础结果。';
+    if (error.message?.includes('API key not valid') || error.status === 400 || error.status === 403) {
+      errorReason = 'API Key 无效或已过期。';
+    } else if (error.status === 429) {
+      errorReason = 'AI 服务请求过于频繁，请稍后再试。';
+    }
+
     return {
-      keywords: [userQuery],
-      recommendedCategories: [Category.ALL],
-      reasoning: 'AI 服务暂时繁忙，已为您显示基础结果。'
+      ...fallbackResult,
+      reasoning: errorReason
     };
   }
 };
