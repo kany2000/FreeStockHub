@@ -83,6 +83,11 @@ export const getSearchSuggestions = async (userQuery: string): Promise<AISearchR
     // Log the full error object for debugging
     console.error("AI Search Error Details:", error);
     
+    // NEW: 帮助用户定位 403 错误的来源域名
+    if (typeof window !== 'undefined') {
+        console.log("DEBUG INFO: Please ensure this origin is allowed in your Google Cloud Console API Key settings:", window.location.origin);
+    }
+    
     let errorReason = 'AI 服务遇到未知错误，已显示基础结果。';
     const status = error.status;
     const msg = error.message || '';
@@ -92,7 +97,7 @@ export const getSearchSuggestions = async (userQuery: string): Promise<AISearchR
       errorReason = 'API Key 无效 (400)。请检查密钥是否正确。';
     } else if (status === 403) {
       // 这是最可能的线上错误原因
-      errorReason = '访问被拒绝 (403)。请在 Google Cloud Console 检查 API Key 限制，确保域名已添加。';
+      errorReason = '访问被拒绝 (403)。请按 F12 查看控制台，将显示的 Origin 添加到 Google Cloud Console 的 API Key 白名单中。';
     } else if (status === 429) {
       errorReason = '请求过多 (429)。API 配额已耗尽。';
     } else if (msg.includes('fetch failed')) {
