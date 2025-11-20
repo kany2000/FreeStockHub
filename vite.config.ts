@@ -3,14 +3,20 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
-  // 优先使用环境变量，如果读取失败(例如.env文件问题)，则使用提供的默认 Key
-  const apiKey = env.API_KEY || "AIzaSyBbsNDIaS7UFAKEZLU9oCdEASlaie8iMFY";
+  
+  // 逻辑：优先使用 .env/.env.local 中的配置。
+  // 如果没有读到（例如文件编码问题或未生效），则强制使用您提供的硬编码 Key。
+  // 注意：在生产环境代码中硬编码 Key 通常不推荐，但为了确保您的静态部署即刻可用，这里作为兜底策略。
+  const hardcodedKey = "AIzaSyBbsNDIaS7UFAKEZLU9oCdEASlaie8iMFY";
+  const apiKey = env.API_KEY || hardcodedKey;
+
+  console.log(`[Vite Config] API Key Status: ${apiKey ? 'Loaded' : 'Missing'} (Length: ${apiKey?.length || 0})`);
 
   return {
-    base: './', // 关键配置：使用相对路径，确保静态部署（如直接打开或子目录）正常工作
+    base: './', 
     plugins: [react()],
     define: {
-      // 确保 process.env.API_KEY 在构建后的代码中可用
+      // 使用 JSON.stringify 确保插入的是字符串值
       'process.env.API_KEY': JSON.stringify(apiKey)
     }
   };
