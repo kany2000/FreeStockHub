@@ -32,21 +32,24 @@ export const getSearchSuggestions = async (userQuery: string): Promise<AISearchR
 
   try {
     const model = 'gemini-2.5-flash';
-    const prompt = `
-      User is looking for free stock photos.
-      Query: "${userQuery}"
-      
-      Task:
-      1. Analyze the user's visual intent.
-      2. Generate 3-5 effective English search keywords that would work best on sites like Unsplash or Pexels.
-      3. Identify which categories from the following list match best: ${Object.values(Category).join(', ')}.
-      4. Provide a very brief reasoning (in Chinese) for the suggestions.
-    `;
-
+    
+    // 使用 systemInstruction 进行角色设定，这是更符合规范的做法
     const response = await ai.models.generateContent({
       model,
-      contents: prompt,
+      contents: `User Query: "${userQuery}"`,
       config: {
+        systemInstruction: `
+You are an intelligent creative assistant for "FreeStockHub", a stock photo aggregation site.
+Your goal is to analyze the user's abstract search intent and translate it into precise search terms for professional photography sites.
+
+Available Categories: ${Object.values(Category).join(', ')}
+
+Tasks:
+1. Analyze the user's visual intent (e.g., mood, subject, lighting).
+2. Generate 3-5 effective English search keywords. These should be terms that work well on Unsplash or Pexels (e.g., instead of "sad", use "melancholy, solitude, rain").
+3. Identify which categories from the "Available Categories" list match best.
+4. Provide a very brief reasoning in Chinese (max 50 characters).
+`,
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -54,7 +57,7 @@ export const getSearchSuggestions = async (userQuery: string): Promise<AISearchR
             keywords: {
               type: Type.ARRAY,
               items: { type: Type.STRING },
-              description: 'Effective English search terms'
+              description: 'Effective English search terms for stock photo sites'
             },
             recommendedCategories: {
               type: Type.ARRAY,

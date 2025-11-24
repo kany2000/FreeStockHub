@@ -5,7 +5,7 @@ import SiteCard from './components/SiteCard';
 import Footer from './components/Footer';
 import { RESOURCE_SITES } from './constants';
 import { Category, AISearchResult } from './types';
-import { Filter, Tag } from 'lucide-react';
+import { Filter, Tag, AlertCircle } from 'lucide-react';
 
 const App: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<Category>(Category.ALL);
@@ -52,6 +52,9 @@ const App: React.FC = () => {
     return sites;
   }, [activeCategory, aiResult]);
 
+  // Determine if the result is actually an error message
+  const isErrorResult = aiResult && (aiResult.reasoning.includes('[Err:') || aiResult.reasoning.includes('访问被拒绝'));
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -62,20 +65,36 @@ const App: React.FC = () => {
         
         {/* AI Context Banner */}
         {aiResult && (
-          <div className="bg-indigo-600 text-white p-6 rounded-2xl shadow-lg mb-10 animate-fade-in">
+          <div 
+            className={`p-6 rounded-2xl shadow-lg mb-10 animate-fade-in text-white transition-colors duration-300 ${
+              isErrorResult ? 'bg-red-500' : 'bg-indigo-600'
+            }`}
+          >
             <div className="flex items-start gap-3">
-              <Tag className="mt-1 shrink-0 text-indigo-200" size={20} />
+              {isErrorResult ? (
+                <AlertCircle className="mt-1 shrink-0 text-red-100" size={20} />
+              ) : (
+                <Tag className="mt-1 shrink-0 text-indigo-200" size={20} />
+              )}
+              
               <div>
-                <h3 className="font-bold text-lg mb-1">AI 智能分析结果</h3>
-                <p className="text-indigo-100 mb-3 text-sm">{aiResult.reasoning}</p>
-                <div className="flex flex-wrap gap-2 items-center">
-                  <span className="text-xs font-medium uppercase tracking-wider text-indigo-300">推荐关键词:</span>
-                  {aiResult.keywords.map((kw, idx) => (
-                    <span key={idx} className="px-3 py-1 bg-indigo-500/50 rounded-full text-sm border border-indigo-400/30">
-                      {kw}
-                    </span>
-                  ))}
-                </div>
+                <h3 className="font-bold text-lg mb-1">
+                  {isErrorResult ? 'AI 服务提示' : 'AI 智能分析结果'}
+                </h3>
+                <p className={`mb-3 text-sm ${isErrorResult ? 'text-red-50 font-medium' : 'text-indigo-100'}`}>
+                  {aiResult.reasoning}
+                </p>
+                
+                {!isErrorResult && (
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <span className="text-xs font-medium uppercase tracking-wider text-indigo-300">推荐关键词:</span>
+                    {aiResult.keywords.map((kw, idx) => (
+                      <span key={idx} className="px-3 py-1 bg-indigo-500/50 rounded-full text-sm border border-indigo-400/30">
+                        {kw}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
