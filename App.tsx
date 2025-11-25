@@ -14,8 +14,6 @@ const App: React.FC = () => {
   const handleSearch = (result: AISearchResult | null) => {
     setAiResult(result);
     if (result && result.recommendedCategories.length > 0) {
-      // Automatically switch filter to the first recommendation if specific
-      // Or keep ALL if it's general
       if (!result.recommendedCategories.includes(Category.ALL)) {
         setActiveCategory(result.recommendedCategories[0] as Category);
       } else {
@@ -26,19 +24,15 @@ const App: React.FC = () => {
 
   const handleCategoryClick = (cat: Category) => {
     setActiveCategory(cat);
-    // If user manually clicks a category, we might want to clear specific AI strict filtering
-    // but keeping the keywords is fine.
   };
 
   const filteredSites = useMemo(() => {
     let sites = RESOURCE_SITES;
 
-    // 1. Filter by Category
     if (activeCategory !== Category.ALL) {
       sites = sites.filter(site => site.categories.includes(activeCategory) || site.categories.includes(Category.GENERAL));
     }
 
-    // 2. Sort: If AI recommends specific categories, prioritize sites in those categories
     if (aiResult && aiResult.recommendedCategories.length > 0) {
         sites = [...sites].sort((a, b) => {
             const aMatch = aiResult.recommendedCategories.some(c => a.categories.includes(c as Category));
@@ -52,44 +46,44 @@ const App: React.FC = () => {
     return sites;
   }, [activeCategory, aiResult]);
 
-  // Determine if the result is actually an error message
   const isErrorResult = aiResult && (aiResult.reasoning.includes('[Err:') || aiResult.reasoning.includes('访问被拒绝'));
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
       
       <Hero onSearch={handleSearch} />
 
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full -mt-8 z-20 relative">
+      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full -mt-10 z-20 relative">
         
         {/* AI Context Banner */}
         {aiResult && (
           <div 
-            className={`p-6 rounded-2xl shadow-lg mb-10 animate-fade-in text-white transition-colors duration-300 ${
-              isErrorResult ? 'bg-red-500' : 'bg-indigo-600'
+            className={`p-6 rounded-2xl shadow-xl mb-10 animate-fade-in text-white transition-all duration-300 transform hover:scale-[1.01] ${
+              isErrorResult ? 'bg-gradient-to-br from-red-500 to-orange-500' : 'bg-gradient-to-br from-indigo-600 to-purple-700'
             }`}
           >
             <div className="flex items-start gap-3">
               {isErrorResult ? (
-                <AlertCircle className="mt-1 shrink-0 text-red-100" size={20} />
+                <div className="bg-white/20 p-2 rounded-lg"><AlertCircle className="text-white" size={24} /></div>
               ) : (
-                <Tag className="mt-1 shrink-0 text-indigo-200" size={20} />
+                <div className="bg-white/20 p-2 rounded-lg"><Tag className="text-white" size={24} /></div>
               )}
               
-              <div>
-                <h3 className="font-bold text-lg mb-1">
-                  {isErrorResult ? 'AI 服务提示' : 'AI 智能分析结果'}
+              <div className="flex-1">
+                <h3 className="font-bold text-lg mb-1 flex items-center justify-between">
+                  <span>{isErrorResult ? 'AI 服务提示' : 'AI 智能分析结果'}</span>
+                  {!isErrorResult && <span className="text-xs font-normal bg-white/20 px-2 py-0.5 rounded-full">Gemini 2.5 Flash</span>}
                 </h3>
-                <p className={`mb-3 text-sm ${isErrorResult ? 'text-red-50 font-medium' : 'text-indigo-100'}`}>
+                <p className={`mb-3 text-sm ${isErrorResult ? 'text-red-50 font-medium' : 'text-indigo-50 leading-relaxed'}`}>
                   {aiResult.reasoning}
                 </p>
                 
                 {!isErrorResult && (
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <span className="text-xs font-medium uppercase tracking-wider text-indigo-300">推荐关键词:</span>
+                  <div className="flex flex-wrap gap-2 items-center mt-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-200">推荐关键词:</span>
                     {aiResult.keywords.map((kw, idx) => (
-                      <span key={idx} className="px-3 py-1 bg-indigo-500/50 rounded-full text-sm border border-indigo-400/30">
+                      <span key={idx} className="px-3 py-1 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-lg text-sm border border-white/10 transition-colors cursor-copy" title="点击可复制（需自行实现复制功能）">
                         {kw}
                       </span>
                     ))}
@@ -101,28 +95,34 @@ const App: React.FC = () => {
         )}
 
         {/* Category Filter */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-8 flex flex-wrap items-center gap-3 sticky top-20 z-30">
-          <div className="flex items-center text-slate-500 mr-2">
-            <Filter size={18} className="mr-2" />
-            <span className="text-sm font-medium">筛选:</span>
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-2 mb-8 sticky top-20 z-30 transition-all duration-300 hover:shadow-xl">
+          <div className="flex flex-wrap items-center gap-2 p-2">
+             <div className="flex items-center text-slate-400 mr-2 px-2 hidden sm:flex">
+              <Filter size={18} className="mr-2" />
+              <span className="text-sm font-semibold uppercase tracking-wider">筛选</span>
+            </div>
+            
+            {Object.values(Category).map((cat) => (
+              <button
+                key={cat}
+                onClick={() => handleCategoryClick(cat)}
+                className={`
+                  relative px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ease-out
+                  ${activeCategory === cat
+                    ? 'bg-slate-900 text-white shadow-lg scale-105 ring-2 ring-slate-200 ring-offset-2'
+                    : 'bg-transparent text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:-translate-y-1 hover:shadow-md'
+                  }
+                  active:scale-95
+                `}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
-          {Object.values(Category).map((cat) => (
-            <button
-              key={cat}
-              onClick={() => handleCategoryClick(cat)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                activeCategory === cat
-                  ? 'bg-slate-900 text-white shadow-md transform scale-105'
-                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-100'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
         </div>
 
         {/* Grid */}
-        <div id="categories" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div id="categories" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 pb-20">
           {filteredSites.map((site, index) => (
             <SiteCard 
               key={site.id} 
@@ -134,8 +134,10 @@ const App: React.FC = () => {
         </div>
 
         {filteredSites.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-slate-500 text-lg">未找到符合条件的资源站，请尝试切换分类。</p>
+          <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
+            <Filter size={48} className="mx-auto text-slate-300 mb-4" />
+            <p className="text-slate-500 text-lg font-medium">该分类下暂无资源</p>
+            <p className="text-slate-400 text-sm mt-2">请尝试切换其他分类或查看“全部”</p>
           </div>
         )}
       </main>

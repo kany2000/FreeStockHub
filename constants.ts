@@ -1,5 +1,15 @@
 import { Category, ResourceSite } from './types';
 
+// 精选的高清背景图，涵盖风景、科技、抽象等风格
+export const HERO_IMAGES = [
+  'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=2071&auto=format&fit=crop', // 山脉风景
+  'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop', // 赛博朋克科技
+  'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop', // 地球/网络
+  'https://images.unsplash.com/photo-1518655048521-f130df041f66?q=80&w=2070&auto=format&fit=crop', // 极简办公
+  'https://images.unsplash.com/photo-1534224039826-c7a0eda0e6b3?q=80&w=2070&auto=format&fit=crop', // 多彩抽象
+  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop'  // 流体艺术
+];
+
 export const RESOURCE_SITES: ResourceSite[] = [
   {
     id: 'unsplash',
